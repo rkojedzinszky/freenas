@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import rrdtool, os, re, hashlib
 
 # Interface statistics
