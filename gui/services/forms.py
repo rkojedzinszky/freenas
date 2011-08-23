@@ -682,7 +682,10 @@ class iSCSITargetDeviceExtentForm(ModelForm):
         # XXX: completely convert to subprocess pattern, similar to above.
         gate_pipe = os.popen("""/usr/sbin/diskinfo `/sbin/geom gate status -s """
                              """| /usr/bin/cut -d" " -f1`""")
-        gate_diskinfo = gate_pipe.read().strip().split('\n')
+        try:
+            gate_diskinfo = gate_pipe.read().strip().split('\n')
+        finally:
+            gate_pipe.close()
         for item in gate_diskinfo:
             if item:
                 item = item.split()
@@ -697,9 +700,12 @@ class iSCSITargetDeviceExtentForm(ModelForm):
                 diskchoices[devname] = "%s (%s)" % (devname, capacity)
         # Exclude the root device
         rootdev = os.popen("""glabel status | grep `mount | awk '$3 == "/" {print $1}' | sed -e 's/\/dev\///'` | awk '{print $3}'""").read().strip()
-        rootdev_base = re.search(r'[a-z/]*[0-9]*', rootdev)
-        if rootdev_base != None:
-            diskchoices.pop(rootdev_base.group(0), None)
+        try:
+            rootdev_base = re.search(r'[a-z/]*[0-9]*', rootdev)
+        finally:
+            rootdev.close()
+        if rootdev_base and rootdev_base.group(0) in diskchoices:
+            del diskchoices[rootdev_base.group(0)]
         # Exclude what's already added
         if exclude:
             disks = Disk.objects.exclude(id__in=extents).values('disk_identifier')
