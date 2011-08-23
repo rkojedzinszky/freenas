@@ -1,0 +1,55 @@
+#!/bin/sh
+#
+# $FreeBSD$
+#
+
+# PROVIDE: ix-inadyn
+# BEFORE: inadyn
+
+. /etc/rc.subr
+
+generate_inadyn_real()
+{
+	local IFS=\|
+
+	local f="id ddns_provider ddns_domain ddns_username ddns_password ddns_updateperiod ddns_fupdateperiod"
+	eval local $f
+	local cmd sf
+	sf=$(echo $f | sed -e 's/ /, /g')
+	${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} \
+		"SELECT $sf FROM services_dynamicdns ORDER BY -id LIMIT 1" | \
+	while eval read $f; do
+		if [ -n "${ddns_provider}" ]; then
+			echo "dyndns_system ${ddns_provider}"
+		fi
+		cat << E*O*F
+background
+syslog
+username ${ddns_username}
+password ${ddns_password}
+alias ${ddns_domain}
+E*O*F
+		if [ -n "${ddns_updateperiod}" ]; then
+			echo "update_period_sec ${ddns_updateperiod}"
+		fi
+		if [ -n "${ddns_fupdateperiod}" ]; then
+			echo "forced_update_period ${ddns_fupdateperiod}"
+		fi
+		ddns_options=`${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT ddns_options FROM services_dynamicdns WHERE id=${id}"`
+		if [ -n "${ddns_options}" ]; then
+			echo "${ddns_options}"
+		fi
+	done
+}
+
+generate_inadyn()
+{
+	generate_inadyn_real > /usr/local/etc/inadyn.conf
+}
+
+name="ix-inadyn"
+start_cmd='generate_inadyn'
+stop_cmd=':'
+
+load_rc_config $name
+run_rc_command "$1"

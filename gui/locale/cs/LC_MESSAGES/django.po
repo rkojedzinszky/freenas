@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-06-09 13:49-0700\n"
-"PO-Revision-Date: 2011-08-14 14:08+0200\n"
-"Last-Translator: Radim <kolar.radim@gmail.com>\n"
+"PO-Revision-Date: 2011-08-21 16:51+0200\n"
+"Last-Translator: Velociraptor <hrspam@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
@@ -115,19 +115,16 @@ msgid "Level 1 - Minimum power usage with Standby (spindown)"
 msgstr "Level 1 - Minimální spotřeba s pohotovostním režimem (spindown)"
 
 #: choices.py:83
-#, fuzzy
 msgid "Level 64 - Intermediate power usage with Standby"
-msgstr "Průměrná spotřeba s pohotovostním režimem"
+msgstr "Level 64 - Průměrná spotřeba s pohotovostním režimem"
 
 #: choices.py:84
-#, fuzzy
 msgid "Level 127 - Intermediate power usage with Standby"
-msgstr "Průměrná spotřeba s pohotovostním režimem"
+msgstr "Level 127 - Průměrná spotřeba s pohotovostním režimem"
 
 #: choices.py:85
-#, fuzzy
 msgid "Level 128 - Minimum power usage without Standby (no spindown)"
-msgstr "Minimální spotřeba bez pohotovostního režimu (bez spindown)"
+msgstr "Level 128 - Minimální spotřeba bez pohotovostního režimu (bez spindown)"
 
 #: choices.py:86
 #, fuzzy
@@ -690,7 +687,7 @@ msgid ""
 "We apologize, but your form has expired. Please continue filling out the "
 "form from this page."
 msgstr ""
-"Omlouváme se, ale platnost dat v formuláři vypršela. Prosím, opakujte "
+"Omlouváme se, ale platnost dat ve formuláři vypršela. Prosím, opakujte "
 "vyplnění formuláře."
 
 #: freeadmin/forms.py:95
@@ -1310,7 +1307,7 @@ msgstr ""
 
 #: services/models.py:132
 msgid "Allow Empty Password"
-msgstr ""
+msgstr "Povolit prázdné heslo"
 
 #: services/models.py:135 services/models.py:694 services/models.py:728
 #: services/models.py:760 services/models.py:906 services/models.py:1162
@@ -1340,7 +1337,7 @@ msgstr ""
 
 #: services/models.py:149
 msgid "Home directories"
-msgstr ""
+msgstr "Domovské adresáře"
 
 #: services/models.py:153
 msgid "Enable AIO"
@@ -1377,7 +1374,7 @@ msgstr ""
 
 #: services/models.py:180
 msgid "Server Name"
-msgstr ""
+msgstr "Jméno serveru"
 
 #: services/models.py:181
 msgid ""
@@ -1416,7 +1413,7 @@ msgstr "AFP"
 
 #: services/models.py:214
 msgid "Number of servers"
-msgstr ""
+msgstr "Počet serverů"
 
 #: services/models.py:215
 msgid ""
@@ -1426,7 +1423,7 @@ msgstr ""
 
 #: services/models.py:219
 msgid "Asynchronous mode"
-msgstr ""
+msgstr "Asynchronní režim"
 
 #: services/models.py:220
 msgid ""
@@ -1938,7 +1935,7 @@ msgstr ""
 
 #: services/models.py:817
 msgid "Connections"
-msgstr ""
+msgstr "Připojení"
 
 #: services/models.py:818
 msgid "Maximum number of connections per IP address (0 = unlimited)."
@@ -1974,7 +1971,7 @@ msgstr ""
 #: templates/services/iscsi_extents.html:7 templates/services/rsyncmod.html:7
 #: templates/sharing/windows.html:15 templates/storage/volumes.html:71
 msgid "Path"
-msgstr ""
+msgstr "Cesta"
 
 #: services/models.py:838
 msgid "Allow Local User Login"
@@ -1998,7 +1995,7 @@ msgstr ""
 
 #: services/models.py:860
 msgid "Allow Transfer Resumption"
-msgstr ""
+msgstr "Povolit znovunavázání přenosu"
 
 #: services/models.py:862
 msgid "Always Chroot"
@@ -2096,7 +2093,7 @@ msgstr ""
 
 #: services/models.py:922
 msgid "Directory"
-msgstr ""
+msgstr "Adresář"
 
 #: services/models.py:923
 msgid ""
@@ -2147,7 +2144,7 @@ msgstr ""
 
 #: services/models.py:962
 msgid "Alternate TCP port. Default is 22"
-msgstr ""
+msgstr "Alternativní TCP port. Standardně 22"
 
 #: services/models.py:965
 msgid "Login as Root with password"
@@ -2169,7 +2166,7 @@ msgstr ""
 
 #: services/models.py:973
 msgid "Compress Connections"
-msgstr ""
+msgstr "Komprimovat spojení"
 
 #: services/models.py:976
 msgid "Host Private Key"
@@ -4108,7 +4105,7 @@ msgstr ""
 #: templates/freeadmin/index.html:35 templates/freeadmin/index.html.py:39
 #: templates/freeadmin/index.html:44
 msgid "Loading..."
-msgstr ""
+msgstr "Načítám..."
 
 #: templates/freeadmin/index.html:46
 msgid "Reboot the System"
@@ -4180,7 +4177,7 @@ msgstr ""
 
 #: templates/freeadmin/index.html:92
 msgid "FreeNAS Translations"
-msgstr ""
+msgstr "Překlady FreeNASu"
 
 #: templates/freeadmin/index.html:97
 msgid "Support Issues"
@@ -4520,7 +4517,7 @@ msgstr ""
 
 #: templates/services/rsyncmod.html:34
 msgid "No rsync modules defined"
-msgstr ""
+msgstr "Nebyly definovány žádné rsync moduly"
 
 #: templates/services/rsyncmod.html:40 templates/services/rsyncmod.html:42
 msgid "Add Rsync Module"
@@ -4795,7 +4792,7 @@ msgstr ""
 
 #: templates/storage/volume_edit.html:9
 msgid "Edit ZFS Volume"
-msgstr ""
+msgstr "Upravit ZFS svazek"
 
 #: templates/storage/volume_export.html:7
 msgid "Are you sure you want to export?"
@@ -4815,11 +4812,11 @@ msgstr ""
 
 #: templates/storage/volumes.html:74
 msgid "Size"
-msgstr ""
+msgstr "Velikost"
 
 #: templates/storage/volumes.html:75
 msgid "Status"
-msgstr ""
+msgstr "Stav"
 
 #: templates/storage/volumes.html:92 templates/storage/volumes.html.py:96
 msgid "Destroy ZFS Volume"
@@ -4832,7 +4829,7 @@ msgstr ""
 #: templates/storage/volumes.html:137 templates/storage/volumes.html.py:141
 #: templates/storage/volumes.html:157 templates/storage/volumes.html.py:161
 msgid "Edit ZFS Options"
-msgstr ""
+msgstr "Upravit nastavení ZFS"
 
 #: templates/storage/volumes.html:147 templates/storage/volumes.html.py:151
 msgid "Destroy Volume"
@@ -5041,7 +5038,7 @@ msgstr "Doba od spuštění"
 
 #: templates/system/system_info.html:28
 msgid "Load Average"
-msgstr ""
+msgstr "Průměrné vytížení"
 
 #: templates/system/system_info.html:32
 msgid "FreeNAS Build"

@@ -1,0 +1,356 @@
+#-
+# Copyright (c) 2010 iXsystems, Inc., All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL Jordan Hubbard OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+#
+# This file is heavily derived from both Sam Leffler's Avilia config,
+# as well as the BSDRP project's config file.  Neither of these have
+# an explicit copyright/license statement, but are implicitly BSDL.
+#
+
+#
+# FreeNAS specific bits of the common stuff.
+#
+
+# Find our files, since we're out of tree
+case $2 in
+/*/*)
+    NANO_CFG_BASE=$(dirname $2)
+    NANO_SRC=`pwd | sed 's/.tools.tools.nanobsd.*//'`
+    ;;
+*/*)
+    NANO_CFG_BASE=$(dirname `pwd`/$2)
+    NANO_SRC=`pwd | sed 's/.tools.tools.nanobsd.*//'`
+    ;;
+*)  NANO_CFG_BASE=`pwd`
+    NANO_SRC=`realpath $0 | sed 's/.tools.tools.nanobsd.*//'`
+    ;;
+esac
+
+if [ -n "${FREENAS_ARCH}" ]; then
+    NANO_ARCH=${FREENAS_ARCH}
+fi
+# REVISION gets overloaded when doing tagged versions, SVNREVISION allows
+# us to kleep the SVN revision number even when the version string is
+# overloaded with a name.
+: ${SVNREVISION=`svnversion ${NANO_CFG_BASE}`}
+: ${REVISION=`svnversion ${NANO_CFG_BASE}`}
+NANO_NAME="FreeNAS-8r${REVISION}-${NANO_ARCH}"
+NANO_IMGNAME="${NANO_NAME}.full"
+NANO_KERNEL=${NANO_CFG_BASE}/FREENAS.${NANO_ARCH}
+: ${NANO_OBJ=/tmp/${LOGNAME}/obj.freenas.${NANO_ARCH}}
+NANO_LABEL=FreeNAS
+NANO_BOOT0CFG="-o packet -s 1 -m 3 -t 18"
+NANO_RAM_TMPVARSIZE=$((160*1024))
+
+DEBUG="1"
+
+NANO_IMAGES=2
+FlashDevice generic 2g
+
+. ${NANO_CFG_BASE}/common
+
+add_port devel/pkg-config
+add_port x11/kbproto
+add_port x11/xproto -DWITHOUT_X11 # run dep of collectd
+add_port x11/libXdmcp -DWITHOUT_X11 # run dep of collectd
+add_port x11/libXau -DWITHOUT_X11 # run dep of collectd
+add_port devel/libpthread-stubs -DWITHOUT_X11 # run dep of collectd
+add_port x11/libxcb -DWITHOUT_X11 # run dep of collectd
+add_port x11/libX11
+add_port devel/cdialog
+add_port dns/inadyn			# -mt?
+#+editors/nano
+add_port lang/perl5.12
+add_port converters/libiconv
+add_port converters/iconv
+add_port devel/gettext
+#-editors/nano
+add_port editors/nano
+add_port ftp/proftpd
+#+mail/msmtp
+add_port dns/libidn
+add_port security/ca_root_nss -D WITH_ETCSYMLINK
+#-mail/msmtp
+add_port mail/msmtp -DWITH_OPENSSL
+add_port net-mgmt/bsnmp-ucd
+add_port net-mgmt/bsnmptools
+add_port net-mgmt/clog
+add_port net-mgmt/sipcalc
+add_port net/istgt
+add_port security/libgcrypt
+add_port security/libgpg-error
+add_port databases/db46
+#+net/nss_ldap
+add_port security/cyrus-sasl2
+add_port net/openldap24-sasl-client
+#-net/nss_ldap
+add_port net/nss_ldap
+add_port net/rsync 
+add_port lang/python27
+add_port dns/py-dnspython
+#+net/samba
+add_port devel/talloc
+add_port devel/libexecinfo
+add_port devel/popt
+add_port databases/tdb
+add_port sysutils/libsunacl
+#-net/samba
+add_port net/samba35		-DWITHOUT_CUPS -DWITH_LDAP -DWITH_ADS \
+	-DWITH_WINBIND -DWITH_ACL_SUPPORT -DWITH_PAM_SMBPASS -DWITH_AIO_SUPPORT \
+	-DWITH_EXP_MODULES 
+add_port security/pam_ldap
+add_port security/pam_mkhomedir
+add_port shells/bash
+add_port shells/scponly
+add_port sysutils/e2fsprogs
+#+sysutils/fusefs-ntfs
+add_port sysutils/fusefs-kmod
+add_port sysutils/fusefs-libs
+add_port devel/libublio
+#-sysutils/fusefs-ntfs
+add_port sysutils/fusefs-ntfs
+add_port sysutils/ntfsprogs
+add_port sysutils/smartmontools
+#+emulators/open-vm-tools-nox11
+add_port devel/icu
+add_port devel/pcre
+add_port devel/glib20
+add_port net/libdnet
+#-emulators/open-vm-tools-nox11
+add_port emulators/open-vm-tools-nox11
+add_port databases/sqlite3
+add_port databases/py-sqlite3
+add_port databases/py-bsddb3
+add_port www/py-django -DWITHOUT_MYSQL
+add_port www/py-dojango
+#+databases/py-south
+add_port devel/py-setuptools
+#-databases/py-south
+add_port databases/py-south
+add_port devel/py-asn1
+add_port devel/py-asn1-modules
+#+add_port www/lighttpd
+add_port www/spawn-fcgi
+#-add_port www/lighttpd
+add_port www/lighttpd
+#+add_port www/py-flup
+#-add_port www/py-flup
+add_port www/py-flup
+#+add_port sysutils/nut
+#-add_port sysutils/nut
+add_port net-mgmt/net-snmp
+add_port sysutils/nut -DWITHOUT_NEON
+
+add_port devel/libstatgrab -DWITHOUT_X11 # run dep of collectd
+add_port devel/libltdl -DWITHOUT_X11 # run dep of collectd
+add_port print/freetype2 -DWITHOUT_X11 # run dep of collectd
+add_port textproc/expat2 -DWITHOUT_X11 # run dep of collectd
+add_port x11-fonts/fontconfig -DWITHOUT_X11 # run dep of collectd
+add_port x11-fonts/libfontenc -DWITHOUT_X11 # run dep of collectd
+add_port x11-fonts/mkfontscale -DWITHOUT_X11 # run dep of collectd
+add_port x11-fonts/mkfontdir -DWITHOUT_X11 # run dep of collectd
+add_port x11-fonts/font-bh-ttf -DWITHOUT_X11 # run dep of collectd
+add_port x11-fonts/font-misc-meltho -DWITHOUT_X11 # run dep of collectd
+add_port x11-fonts/font-misc-ethiopic -DWITHOUT_X11 # run dep of collectd
+add_port x11-fonts/bitstream-vera -DWITHOUT_X11 # run dep of collectd
+add_port x11-fonts/font-util -DWITHOUT_X11 # run dep of collectd
+add_port x11-fonts/encodings -DWITHOUT_X11 # run dep of collectd
+add_port x11-fonts/xorg-fonts-truetype -DWITHOUT_X11 # run dep of collectd
+add_port x11/xcb-util -DWITHOUT_X11 # run dep of collectd
+add_port x11/libXrender
+add_port x11/renderproto
+add_port x11/xcb-proto -DWITHOUT_X11 # run dep of collectd
+add_port devel/gamin -DWITHOUT_X11 # run dep of collectd
+add_port devel/gio-fam-backend -DWITHOUT_X11 # run dep of collectd
+add_port x11/pixman -DWITHOUT_X11 # run dep of collectd
+add_port graphics/png -DWITHOUT_X11 # run dep of collectd
+add_port graphics/cairo -DWITHOUT_X11 # run dep of collectd
+add_port devel/m4 -DWITHOUT_X11 # run dep of collectd
+add_port devel/bison -DWITHOUT_X11 # run dep of collectd
+add_port devel/libffi -DWITHOUT_X11 # run dep of collectd
+add_port x11-toolkits/pango -DWITHOUT_X11 # run dep of collectd
+add_port textproc/libxml2 -DWITHOUT_X11 # run dep of collectd
+add_port textproc/py-libxml2 -DWITHOUT_X11 # run dep of collectd
+add_port databases/rrdtool -DWITHOUT_X11 -DWITHOUT_PERL_MODULE -DWITH_PYTHON_MODULE # run dep of collectd
+add_port devel/gobject-introspection -DWITHOUT_X11 # run dep of collectd
+add_port net/liboping -DWITHOUT_X11 # run dep of collectd
+add_port net-mgmt/collectd -DWITHOUT_BIND -DWITHOUT_SNMP -DWITHOUT_X11
+add_port devel/py-ipaddr
+add_port converters/base64
+add_port emulators/mtools -DWITHOUT_X11
+add_port sysutils/arcconf
+add_port sysutils/tw_cli
+add_port net/py-ldap2 -DWITH_SASL
+add_port sysutils/ataidle
+add_port devel/xorg-macros
+add_port sysutils/gnome_subr
+add_port x11/libX11
+add_port devel/dbus
+add_port devel/dbus-glib
+add_port devel/libdaemon
+add_port databases/gdbm
+add_port net/avahi-app
+add_port net/avahi-libdns
+add_port textproc/py-xml
+add_port sysutils/throttle
+add_port sysutils/dmidecode
+add_port devel/libevent
+add_port sysutils/tmux
+add_port net/netatalk		-DWITH_PAM
+add_port ftp/wget
+add_port benchmarks/iperf
+
+if [ "${DEBUG}" -eq "1" ]; then 
+	add_port databases/db42
+	add_port devel/apr1
+	add_port devel/py-logilab-common
+	add_port devel/py-astng
+	add_port devel/pylint
+	add_port www/neon29
+	add_port devel/subversion
+	add_port editors/vim-lite
+	add_port misc/py-pexpect
+	add_port devel/ipython
+	add_port ftp/curl
+	add_port devel/p5-Term-ReadKey
+	add_port devel/p5-subversion
+	add_port mail/p5-Net-SMTP-SSL
+	add_port lang/p5-Error
+	add_port devel/git -DWITH_SVN -DWITHOUT_P4 -DWITHOUT_CVS
+	add_port devel/ctags 
+fi
+	 
+
+if [ "${NANO_PACKAGE_ONLY}" -eq 1 ]; then
+ 	CONF_INSTALL="${CONF_INSTALL}
+${PKG_ONLY_MAKE_CONF}
+"
+	echo "Automatically building a thin image with packages"
+else
+	echo "Automatically building a * * F A T * * image so we can build ports"
+fi
+
+hack_nsswitch_conf ( )
+{
+	# Neuter out all references to NIS in the nssiwtch.conf file
+	# Not sure this is still needed, but FreeNAS has it...
+	sed -i.bak -es/nis/files/g ${NANO_WORLDDIR}/etc/nsswitch.conf
+	rm -f ${NANO_WORLDDIR}/etc/nsswitch.conf.bak
+}
+customize_cmd hack_nsswitch_conf
+
+default_root_password ( )
+{
+	CR "echo freenas | pw usermod root -h 0"
+}
+customize_cmd default_root_password
+
+add_gui()
+{
+    local gui dst dstCR;
+    gui=${NANO_CFG_BASE}/../gui
+    dstCR=/usr/local/www/freenasUI
+    dst=${NANO_WORLDDIR}${dstCR}
+    if [ -d ${gui} ]; then
+	pprint 2 "Adding freenas web gui"
+	mkdir ${dst}
+	( cd ${gui}
+	  find . -print | grep -Ev '/(CVS|\.svn)' | cpio -dumpv ${dst} )
+	pprint 2 "Making freenas initial database"
+	mkdir ${NANO_WORLDDIR}/data
+	CR "(cd ${dstCR}; python manage.py syncdb --noinput --migrate)"
+	CR "(cd ${dstCR}; python manage.py createadmin --email root@freenas.local)"
+	CR "(cd ${dstCR}; python manage.py compilemessages)"
+	CR "(cd /data; cp freenas-v1.db factory-v1.db)"
+	CR "ln -sf /etc/local_settings.py ${dstCR}/local_settings.py"
+	CR "chown -R www:www ${dstCR} data"
+    else
+        pprint 2 "GUI OMITTED from image"
+    fi
+}
+customize_cmd add_gui
+
+# Move the $world/data to the /data partion
+move_data()
+{
+	set -x
+	db=${NANO_WORLDDIR}/data
+	rm -rf ${NANO_DATADIR}
+	mkdir -p ${NANO_DATADIR}
+	( cd ${db} ; find . | cpio -dumpv ${NANO_DATADIR} )
+	rm -rf ${db}
+}
+customize_cmd move_data
+
+add_data_to_fstab ( )
+{
+	(
+	cd ${NANO_WORLDDIR}
+	echo "/dev/${NANO_DRIVE}s4 /data ufs rw,noatime 2 2" >> etc/fstab
+	mkdir -p data
+	)
+	
+}
+customize_cmd add_data_to_fstab
+
+fix_mt_daapd ( )
+{
+	# Create database directory, for some reason the port/pkg doesn't
+	# do this
+	mkdir -p ${NANO_WORLDDIR}/var/db/mt-daapd
+	# Use the sample config as the actual config
+	# XXX: maybe this should move to common files?
+	cp  ${NANO_WORLDDIR}/usr/local/etc/mt-daapd.conf.sample \
+	    ${NANO_WORLDDIR}/usr/local/etc/mt-daapd.conf
+}
+# customize_cmd fix_mt_daapd
+
+select_httpd ( )
+{
+	echo "lighttpd_enable=YES" >> ${NANO_WORLDDIR}/etc/rc.conf
+}
+customize_cmd select_httpd
+
+remove_patch_divots ( )
+{
+	find ${NANO_WORLDDIR} -name \*.orig -delete
+}
+customize_cmd remove_patch_divots
+
+configure_mnt_md ( )
+{
+	mkdir -p ${NANO_WORLDDIR}/conf/base/mnt
+	echo 2048 > ${NANO_WORLDDIR}/conf/base/mnt/md_size
+}
+customize_cmd configure_mnt_md
+
+save_build ( )
+{
+	if [ "${SVNREVISION}" = "${REVISION}" ]; then
+		echo "${NANO_NAME}" > ${NANO_WORLDDIR}/etc/version.freenas
+	else
+		echo "${NANO_NAME} (${SVNREVISION})" > ${NANO_WORLDDIR}/etc/version.freenas
+	fi
+}
+customize_cmd save_build

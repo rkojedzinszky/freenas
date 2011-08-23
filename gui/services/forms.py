@@ -244,8 +244,31 @@ class RsyncModForm(ModelForm):
             raise ServiceFailed("rsync", _("The Rsync service failed to reload."))
 
 class DynamicDNSForm(ModelForm):
+    pw2 = forms.CharField(max_length=50,
+            label=_("Confirm Password"),
+            widget=forms.widgets.PasswordInput(),
+            required=False,
+            )
+    def __init__(self, *args, **kwargs):
+        super(DynamicDNSForm, self).__init__(*args, **kwargs)
+        if self.instance.ddns_password:
+            self.fields['ddns_password'].required = False
+    def clean_pw2(self):
+        password1 = self.cleaned_data.get("ddns_password")
+        password2 = self.cleaned_data.get("pw2")
+        if password1 != password2:
+            raise forms.ValidationError(_("The two password fields didn't match."))
+        return password2
+    def clean(self):
+        cdata = self.cleaned_data
+        if not cdata.get("ddns_password"):
+            cdata['ddns_password'] = self.instance.ddns_password
+        return cdata
     class Meta:
         model = models.DynamicDNS
+        widgets = {'ddns_password': forms.widgets.PasswordInput(render_value=False), }
+        fields = ('ddns_provider', 'ddns_domain', 'ddns_username', 'ddns_password', 'pw2',
+                    'ddns_updateperiod', 'ddns_fupdateperiod', 'ddns_options')
     def save(self):
         super(DynamicDNSForm, self).save()
         started = notifier().restart("dynamicdns")
@@ -307,13 +330,23 @@ class ActiveDirectoryForm(ModelForm):
     ad_adminpw2 = forms.CharField(max_length=50,
             label=_("Confirm Administrator Password"),
             widget=forms.widgets.PasswordInput(),
+            required=False,
             )
+    def __init__(self, *args, **kwargs):
+        super(ActiveDirectoryForm, self).__init__(*args, **kwargs)
+        if self.instance.ad_adminpw:
+            self.fields['ad_adminpw'].required = False
     def clean_ad_adminpw2(self):
         password1 = self.cleaned_data.get("ad_adminpw")
         password2 = self.cleaned_data.get("ad_adminpw2")
         if password1 != password2:
             raise forms.ValidationError(_("The two password fields didn't match."))
         return password2
+    def clean(self):
+        cdata = self.cleaned_data
+        if not cdata.get("ad_adminpw"):
+            cdata['ad_adminpw'] = self.instance.ad_adminpw
+        return cdata
     def save(self):
         #if self.files.has_key('file'):
         #    self.instance.ad_keytab = base64.encodestring(self.files['file'].read())
@@ -423,6 +456,10 @@ class iSCSITargetAuthCredentialForm(ModelForm):
 class iSCSITargetToExtentForm(ModelForm):
     class Meta:
         model = models.iSCSITargetToExtent
+        widgets = {
+            'iscsi_target': forms.widgets.FilteringSelect(),
+            'iscsi_extent': forms.widgets.FilteringSelect(),
+        }
     def clean_iscsi_target_lun(self):
         try:
             models.iSCSITargetToExtent.objects.get(iscsi_target=self.cleaned_data.get('iscsi_target'),
