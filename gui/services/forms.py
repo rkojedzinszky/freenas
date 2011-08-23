@@ -613,7 +613,7 @@ class iSCSITargetFileExtentForm(ModelForm):
                     m = re.match(r'(\d+)\s*?(%s)' % x, size)
                     if m:
                         return "%s%s" % (m.group(1), m.group(2))
-            raise forms.ValidationError(_("This value can be a size in bytes, or can be postfixed with KB, MB, GB, TB"))
+            raise forms.ValidationError(_("This value can be a size in bytes, or can be suffixed with KB, MB, GB, TB"))
         return size
     def save(self, commit=True):
         oExtent = super(iSCSITargetFileExtentForm, self).save(commit=False)
