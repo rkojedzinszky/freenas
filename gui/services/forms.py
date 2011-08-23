@@ -701,8 +701,7 @@ class iSCSITargetDeviceExtentForm(ModelForm):
         disks = subprocess.check_output(['/sbin/sysctl', '-n', 'kern.disks'])
         disks = disks.rstrip().split()
 
-        # XXX: having to filter out the non-existent disks seems like a kernel
-        # bug to me.
+        # XXX: these are cam/geom provider bugs; see kern/145818.
         diskinfo = []
         for disk in filter(lambda x: os.path.exists('/dev/' + x), disks):
             try:
