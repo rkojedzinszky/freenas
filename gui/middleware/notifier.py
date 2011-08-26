@@ -492,12 +492,20 @@ class notifier:
         self.__system("/sbin/shutdown -p now")
 
     def _reload_cifs(self):
+        self.__system("/usr/sbin/service dbus forcestop")
+        self.__system("/usr/sbin/service dbus restart")
+        self.__system("/usr/sbin/service avahi-daemon forcestop")
+        self.__system("/usr/sbin/service avahi-daemon restart")
         self.__system("/usr/sbin/service ix-samba quietstart")
         self.__system("/usr/sbin/service samba reload")
 
     def _restart_cifs(self):
         # TODO: bug in samba rc.d script
         # self.__system("/usr/sbin/service samba forcestop")
+        self.__system("/usr/sbin/service dbus forcestop")
+        self.__system("/usr/sbin/service dbus restart")
+        self.__system("/usr/sbin/service avahi-daemon forcestop")
+        self.__system("/usr/sbin/service avahi-daemon restart")
         self.__system("/usr/bin/killall nmbd")
         self.__system("/usr/bin/killall smbd")
         self.__system("/usr/sbin/service samba quietstart")
@@ -1028,6 +1036,17 @@ class notifier:
         ret = self.__system_nolog('/sbin/zpool add -f %s spare %s' % (volume, devname))
         return ret
 
+    def detach_volume_swaps(self, volume):
+        """Detach all swaps associated with volume"""
+        vgroup_list = volume.diskgroup_set.all()
+        for vgrp in vgroup_list:
+            vdev_member_list = vgrp.disk_set.all()
+            for disk in vdev_member_list:
+                devname = self.identifier_to_device(disk.disk_identifier)
+                swapdev = self.swap_from_device(devname)
+                if swapdev != '':
+                    self.__system("swapoff /dev/%s" % self.swap_from_device(devname))
+
     def _destroy_volume(self, volume):
         """Destroy a volume designated by volume_id"""
 
@@ -1240,6 +1259,13 @@ class notifier:
                     search = doc.xpathEval("//class[name = '%s']/geom[name = '%s%s']/config/State" % (gtype, name, gtype.lower()))
                     if len(search) > 0:
                         status = search[0].content
+            else:
+                p1 = self.__pipeopen('mount|grep "/dev/ufs/%s"' % name)
+                p1.communicate()
+                if p1.returncode == 0:
+                    status = 'HEALTHY'
+                else:
+                    status = 'DEGRADED'
 
         if status in ('UP', 'COMPLETE', 'ONLINE'):
             status = 'HEALTHY'
@@ -1388,15 +1414,16 @@ class notifier:
             status = res.split('pool: %s' % pool)[1].split('pool:')[0]
             roots = zfs.parse_status(pool, doc, status)
 
-            volumes.append({
-                'label': pool,
-                'type': 'zfs',
-                'group_type': 'none',
-                'cache': roots['cache'].dump() if roots['cache'] else None,
-                'log': roots['log'].dump() if roots['log'] else None,
-                'spare': roots['spare'].dump() if roots['spare'] else None,
-                'disks': roots[pool].dump(),
-                })
+            if roots[pool].status != 'UNAVAIL':
+                volumes.append({
+                    'label': pool,
+                    'type': 'zfs',
+                    'group_type': 'none',
+                    'cache': roots['cache'].dump() if roots['cache'] else None,
+                    'log': roots['log'].dump() if roots['log'] else None,
+                    'spare': roots['spare'].dump() if roots['spare'] else None,
+                    'disks': roots[pool].dump(),
+                    })
 
         return volumes
 

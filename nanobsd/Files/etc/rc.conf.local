@@ -1,0 +1,322 @@
+#!/bin/sh
+# THIS FILE IS RESERVED FOR THE EXCLUSIVE USE OF FREENAS CONFIG SYSTEM.
+# Please edit /etc/rc.conf instead.
+
+#-
+# Copyright (c) 2010, 2011 iXsystems, Inc., All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL Jordan Hubbard OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+
+. /etc/rc.freenas
+
+FREENAS_CONFIG=/data/freenas-v1.db
+FREENAS_SQLITE_CMD=/usr/local/bin/sqlite3
+FREENAS_RC=/var/tmp/rc.conf.freenas
+
+_interface_config()
+{
+	local IFS=\|
+	local interface_id interface dodhcp ipv4addr ipv4netmask doipv6auto ipv6addr ipv6netmask options
+	local lagg_id laggproto lagg_physnic lagg_deviceoptions
+	local vlan_vint vlan_pint vlan_tag
+
+	ipv6_interfaces=""
+
+	if [ `${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT COUNT(id) FROM network_interfaces"` -eq 0 ]; then
+		echo "ifconfig_DEFAULT=\"DHCP\""
+	fi
+
+	# Note: ipv4/ipv6 are supposed in ip/masklen format.
+
+	# Traverse the network interface table and generate rc.conf style
+	# configuration.
+	${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT id, int_interface, int_dhcp, int_ipv4address, int_v4netmaskbit, int_ipv6auto, int_ipv6address, int_v6netmaskbit, int_options FROM network_interfaces ORDER BY id" | \
+	while read interface_id interface dodhcp ipv4addr ipv4netmask doipv6auto ipv6addr ipv6netmask options; do
+		echo -n ifconfig_${interface}=\"
+		if [ "${dodhcp}" = "1" ]; then
+			echo -n "DHCP"
+		elif [ -n "${ipv4addr}" ]; then
+			echo -n "inet ${ipv4addr}/${ipv4netmask} "
+		fi
+		# Hook to support lagg(4) interfaces
+		lagg_id=`${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT id FROM network_lagginterface WHERE lagg_interface_id = ${interface_id}"`
+		if [ -n "${lagg_id}" ]; then
+			laggproto=`${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT lagg_protocol FROM network_lagginterface WHERE lagg_interface_id = ${interface_id}"`
+			echo -n " laggproto ${laggproto}"
+			${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT lagg_physnic FROM network_lagginterfacemembers WHERE lagg_interfacegroup_id=${lagg_id} ORDER BY lagg_ordernum" | \
+			while read lagg_physnic; do
+				echo -n " laggport ${lagg_physnic}"
+			done
+		else
+			if [ -n "${options}" ]; then
+				echo -n " ${options}"
+			fi
+		fi
+		echo \"
+
+		${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT id, alias_v4address, alias_v4netmaskbit, alias_v6address, alias_v6netmaskbit FROM network_alias WHERE alias_interface_id = ${interface_id} ORDER BY id" | \
+		while read alias_id v4addr v4netmask v6addr v6netmask; do
+			eval count_v4=\${counter_${interface}_v4:-0}
+			eval count_v6=\${counter_${interface}_v6:-0}
+			if [ -n "${v4addr}" ]; then
+				echo "ifconfig_${interface}_alias${count_v4}=\"${v4addr}/${v4netmask}\""
+				eval "counter_${interface}_v4=\$((count_v4+1))"
+			fi
+			if [ -n "${v6addr}" ]; then
+				echo "ipv6_ifconfig_${interface}_alias${count_v6}=\"${v6addr}/${v6netmask}\""
+				eval "counter_${interface}_v6=\$((count_v6+1))"
+			fi
+		done
+
+		if [ "${doipv6auto}" = "0" ]; then
+			if [ -n "${ipv6addr}" ]; then
+				echo ipv6_ifconfig_${interface}=\"${ipv6addr}/${ipv6netmask}\"
+				ipv6_interfaces="${ipv6_interfaces} ${interface}"
+			fi
+		else
+			ipv6_interfaces="${ipv6_interfaces} ${interface}"
+		fi
+		if [ -n "${lagg_id}" ]; then
+			cloned_interfaces="${interface} ${cloned_interfaces}"
+			echo "cloned_interfaces=\"${cloned_interfaces}\""
+		fi
+		# TODO: Since the variable exists only in the subshell, we
+		# have to make a workaround.
+		if [ -n "${ipv6_interfaces}" ]; then
+			echo "ipv6_enable=\"YES\""
+			echo "ipv6_network_interfaces=\"lo0${ipv6_interfaces}\""
+		fi
+	done
+
+	#
+	${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT lagg_physnic, lagg_deviceoptions, lagg_interfacegroup_id FROM network_lagginterfacemembers ORDER BY lagg_ordernum" | \
+	while read lagg_physnic lagg_deviceoptions lagg_gid; do
+		lagg_intoptions=`${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT int_options FROM network_interfaces INNER JOIN network_lagginterface ON network_interfaces.id=network_lagginterface.lagg_interface_id WHERE network_lagginterface.id=${lagg_gid}`
+		echo "ifconfig_${lagg_physnic}=\"${lagg_intoptions} ${lagg_deviceoptions}\""
+	done
+
+	# Hook to support vlan interfaces
+	${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT DISTINCT vlan_pint from network_vlan" | \
+	while read vlan_pint; do
+		echo -n vlans_${vlan_pint}=\"
+		${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT vlan_vint from network_vlan WHERE vlan_pint = \"${vlan_pint}\"" | xargs echo -n
+		echo \"
+	done
+	${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT int_ipv4address, int_v4netmaskbit, int_dhcp, int_ipv6address, int_v6netmaskbit, int_ipv6auto, network_vlan.vlan_vint, network_vlan.vlan_tag FROM network_interfaces INNER JOIN network_vlan ON network_interfaces.int_interface=network_vlan.vlan_vint" | \
+	while read ipv4addr ipv4netmask dodhcp ipv6addr ipv6netmask doipv6auto vlan_vint vlan_tag; do
+		echo create_args_${vlan_vint}=\"vlan\ ${vlan_tag}\"
+		echo -n ifconfig_${vlan_vint}=\"
+			if [ "${dodhcp}" = "1" ]; then
+				echo DHCP\"
+			elif [ -n "${ipv4addr}" ]; then
+				echo "inet ${ipv4addr}/${ipv4netmask}\""
+			else
+				echo \"
+			fi
+	done
+	${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT vlan_vint, vlan_tag from network_vlan WHERE vlan_vint NOT IN (SELECT int_interface from network_interfaces);" | \
+	while read vlan_vint vlan_tag; do
+		echo create_args_${vlan_vint}=\"vlan\ ${vlan_tag}\"
+	done
+}
+
+_host_config()
+{
+	local IFS=\|
+	local hostname domainname nameserver1 nameserver2 nameserver3 ipv4gateway ipv6gateway
+	${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT gc_hostname, gc_domain, gc_nameserver1, gc_nameserver2, gc_nameserver3, gc_ipv4gateway, gc_ipv6gateway FROM network_globalconfiguration ORDER BY -id LIMIT 1" | \
+	while read hostname domainname nameserver1 nameserver2 nameserver3 ipv4gateway ipv6gateway; do
+		echo hostname=\"${hostname}.${domainname}\"
+		if [ -n "${ipv4gateway}" ]; then
+			echo defaultrouter=\"${ipv4gateway}\"
+		fi
+		if [ -n "${ipv6gateway}" ]; then
+			echo ipv6_defaultrouter=\"${ipv6gateway}\"
+		fi
+		# Generate resolv.conf
+		if [ -n "${nameserver1}" ]; then
+			echo search ${domainname} > /etc/resolv.conf
+			echo nameserver ${nameserver1} >> /etc/resolv.conf
+			if [ -n "${nameserver2}" ]; then
+				echo nameserver ${nameserver2} >> /etc/resolv.conf
+				if [ -n "${nameserver3}" ]; then
+					echo nameserver ${nameserver3} >> /etc/resolv.conf
+				fi
+			fi
+		fi
+	done
+}
+
+# _bool_config /variable/ /table/ /field/
+_bool_config()
+{
+	local IFS=\|
+	local boolvalue value key
+	if [ -n "$4" ]; then
+		key="$4"
+	else
+		key="id"
+	fi
+	${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT $3 FROM $2 ORDER BY ${key} DESC LIMIT 1" | \
+	while read boolvalue; do
+		if [ "${boolvalue}" = "1" ]; then
+			value="YES"
+		else
+			value="NO"
+		fi
+		echo $1=\"${value}\"
+	done
+}
+
+# _count_config /variable/ /table/ /field/ /where/
+_count_config()
+{
+	local count value
+	count=`${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT COUNT($3) FROM $2 WHERE $3$4"`
+	if [ "${count}" -gt "0" ]; then
+		value="YES"
+	else
+		value="NO"
+	fi
+	echo $1=\"${value}\"
+}
+
+# _bool_svcconfig /variable/ /service_name/
+_bool_svcconfig()
+{
+	local IFS=\|
+	local boolvalue value
+	${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT srv_enable FROM services_services WHERE srv_service='$2' ORDER BY id DESC LIMIT 1" | \
+	while read boolvalue; do
+		if [ "${boolvalue}" = "1" ]; then
+			value="YES"
+		else
+			value="NO"
+		fi
+		echo $1=\"${value}\"
+	done
+}
+
+# Grab static route configuration
+_staticroute_config()
+{
+	local IFS=\|
+	local id destination gateway interface
+
+	${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT id, sr_destination, sr_gateway FROM network_staticroute;" | \
+	while read id destination gateway; do
+		echo route_freenas${id}=\"-net ${destination} ${gateway}\"
+	done
+	echo static_routes=\"`${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT id FROM network_staticroute" | sed -e s/^/freenas/g | xargs echo `\"
+}
+
+_nut_config() {
+	local IFS=\|
+	local boolvalue
+	${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT srv_enable FROM services_services WHERE srv_service='ups' AND srv_enable = 1 LIMIT 1" | \
+	while read boolvalue; do
+		echo "nut_enable=\"YES\""
+	echo "nut_upslog_ups=\"ups@localhost\""
+	echo "nut_upslog_enable=\"YES\""
+	echo "nut_upsmon_enable=\"YES\""
+	done
+}
+
+_gen_conf()
+{
+	## First, import network interface configuration.
+	_interface_config
+	_host_config
+	_staticroute_config
+
+	## Daemons
+	_bool_svcconfig netatalk_enable afp
+	_bool_svcconfig afpd_enable afp
+	_bool_svcconfig cnid_metad_enable afp
+	_bool_svcconfig dbus_enable afp
+	_bool_svcconfig avahi_daemon_enable afp
+	_bool_svcconfig proftpd_enable ftp
+	_bool_svcconfig nfs_server_enable nfs
+	_bool_svcconfig rpc_lockd_enable nfs
+	_bool_svcconfig rpc_statd_enable nfs
+	_bool_svcconfig mountd_enable nfs
+	_bool_svcconfig nfsd_enable nfs
+	_bool_svcconfig cnid_metad_enable cifs
+	_bool_svcconfig dbus_enable cifs
+	_bool_svcconfig avahi_daemon_enable cifs
+	_bool_svcconfig samba_enable cifs
+	_bool_svcconfig rsyncd_enable rsync
+	_bool_svcconfig bsnmpd_enable snmp
+	_bool_svcconfig sshd_enable ssh
+	_bool_svcconfig inetd_enable tftp
+	_bool_svcconfig istgt_enable iscsitarget
+	_bool_svcconfig inadyn_enable dynamicdns
+	_bool_svcconfig smartd_enable smartd
+
+	_nut_config
+
+	# Workaround: we don't enable ZFS by default but still want /etc/zfs/exports
+	# be exist for mountd(8)
+	if [ ! -r /etc/zfs/exports ]; then
+		touch /etc/zfs/exports
+	fi
+
+	_count_config zfs_enable storage_volume vol_fstype =\'ZFS\'
+	_count_config fusefs_enable storage_volume vol_fstype =\'NTFS\'
+	_count_config fusefs_safe storage_volume vol_fstype =\'NTFS\'
+	_count_config powerd_enable system_advanced adv_powerdaemon =1
+
+	# set NFS server options
+	local IFS=\|
+	local numservers
+	${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT nfs_srv_servers FROM services_nfs ORDER BY id DESC LIMIT 1" | \
+	while read numservers; do
+		echo "nfs_server_flags=\"-t -u -n ${numservers}\""
+	done
+
+	local smartdint
+	${FREENAS_SQLITE_CMD} ${FREENAS_CONFIG} "SELECT smart_interval FROM services_smart ORDER BY id DESC LIMIT 1" | \
+	while read smartdint; do
+		inter=$(echo "${smartdint}*60"|/usr/bin/bc)
+		echo "smartd_flags=\"-i ${inter}\""
+	done
+}
+
+# If we're running really early, then mount /data read-only
+if [ ! -f ${FREENAS_CONFIG} ]; then
+	mount -o ro /data
+	_doumount=1
+fi
+
+# Regenerate stale caches of rc.conf data.  We run multiple time
+# as part of the boot process, and this helps.  It also provides
+# a useful file to look at for debugging.
+if [ ! -f ${FREENAS_RC} -o ${FREENAS_CONFIG} -nt ${FREENAS_RC} ]; then
+	_gen_conf > ${FREENAS_RC}
+fi
+
+if [ -n "${_doumount}" ]; then
+	umount /data
+fi
+
+. ${FREENAS_RC}

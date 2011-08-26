@@ -43,8 +43,6 @@ from services.exceptions import ServiceFailed
 from storage.models import Volume, MountPoint, DiskGroup, Disk
 from storage.forms import UnixPermissionField
 from freenasUI.common.forms import ModelForm, Form
-from freenasUI.common.freenasldap import FreeNAS_Users, FreeNAS_User, \
-                                         FreeNAS_Groups, FreeNAS_Group
 from freenasUI.common import humanize_size
 from freenasUI.middleware.notifier import notifier
 from dojango import forms
@@ -66,7 +64,7 @@ class CIFSForm(ModelForm):
         cleaned_data = self.cleaned_data
         home = cleaned_data['cifs_srv_homedir_enable']
         browse = cleaned_data['cifs_srv_homedir_browseable_enable']
-        hdir = cleaned_data['cifs_srv_homedir']
+        hdir = cleaned_data.get('cifs_srv_homedir')
         if (browse or hdir) and not home:
             self._errors['cifs_srv_homedir_enable'] = self.error_class()
             if browse:
