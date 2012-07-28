@@ -1,0 +1,15 @@
+Index: sys/cddl/compat/opensolaris/sys/types.h
+===================================================================
+--- sys/cddl/compat/opensolaris/sys/types.h	(revision 218168)
++++ sys/cddl/compat/opensolaris/sys/types.h	(revision 218169)
+@@ -34,6 +34,10 @@
+  */
+ 
+ #include <sys/stdint.h>
++
++typedef	int64_t		clock_t;
++#define	_CLOCK_T_DECLARED
++
+ #include_next <sys/types.h>
+ 
+ #define	MAXNAMELEN	256
