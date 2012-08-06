@@ -1,14 +1,16 @@
 Index: sys/cddl/compat/opensolaris/sys/types.h
 ===================================================================
---- sys/cddl/compat/opensolaris/sys/types.h	(revision 218168)
-+++ sys/cddl/compat/opensolaris/sys/types.h	(revision 218169)
-@@ -34,6 +34,10 @@
+--- sys/cddl/compat/opensolaris/sys/types.h	(revision 218179)
++++ sys/cddl/compat/opensolaris/sys/types.h	(revision 218180)
+@@ -34,6 +34,12 @@
   */
  
  #include <sys/stdint.h>
 +
++#ifdef _KERNEL
 +typedef	int64_t		clock_t;
 +#define	_CLOCK_T_DECLARED
++#endif
 +
  #include_next <sys/types.h>
  
