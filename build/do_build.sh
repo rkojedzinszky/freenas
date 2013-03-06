@@ -363,7 +363,7 @@ EOF
 		    (
 		      cd $AVATAR_ROOT/FreeBSD/src && git status --porcelain
 		    ) | tee "$git_status_ok"
-		    awk '$1 == "??" { print $2 }' < "$git_status_ok" |  xargs echo rm -Rf
+		    awk '$1 == "??" { print $2 }' < "$git_status_ok" |  xargs rm -Rf
 		else
 		    svn_status_ok="$AVATAR_ROOT/FreeBSD/.svn_status_ok"
 		    rm -f "$svn_status_ok"
