@@ -141,8 +141,9 @@ export SVNREVISION
 # one's environment. Please replace these lines with valid values.
 
 # See bsd.port.mk
-unset MASTER_SITE_BACKUP
-unset MASTER_SITE_OVERRIDE
+# We need this to hit our local package cache.
+#unset MASTER_SITE_BACKUP
+#unset MASTER_SITE_OVERRIDE
 
 # See pkg_add(1).
 unset PACKAGEROOT
