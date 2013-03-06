@@ -290,7 +290,6 @@ build_targets()
 
 freebsd_checkout_svn()
 {
-    set -x
 	: ${FREEBSD_SRC_REPOSITORY_ROOT=http://svn.freebsd.org/base}
 	FREEBSD_SRC_URL_REL="releng/9.1"
 
@@ -309,12 +308,10 @@ freebsd_checkout_svn()
  	 svn revert -R src
 	 svn up src
 	)
-    set +x
 }
 
 freebsd_checkout_git()
 {
-    set -x
     (
 	 cd "$AVATAR_ROOT/FreeBSD"
      if [ -d src/.git ] ; then
@@ -327,7 +324,6 @@ freebsd_checkout_git()
         git clone -b ${GIT_BRANCH} ${GIT_REPO} src
      fi
      )
-     set +x
 }
 
 checkout_freebsd_source()
@@ -360,18 +356,25 @@ checkout_freebsd_source()
 
 ports-all date=2012.07.12.00.00.00
 EOF
-		#
 		# Nuke newly created files to avoid build errors.
-		#
-		svn_status_ok="${AVATAR_ROOT}/FreeBSD/.svn_status_ok"
-		rm -f "${svn_status_ok}"
-		(
-	 		svn status ${AVATAR_ROOT}/FreeBSD/src
-	 		: > "${svn_status_ok}"
-		) | \
+		if [ "x$USE_GIT" != "yes" ] ; then
+		    git_status_ok="$AVATAR_ROOT/FreeBSD/.git_status_ok"
+		    rm -rf "$git_status_ok"
+		    (
+		      cd $AVATAR_ROOT/FreeBSD/src && git status --porcelain
+		    ) | tee "$git_status_ok"
+		    awk '$1 == "??" { print $2 }' < "$git_status_ok" |  xargs echo rm -Rf
+		else
+		    svn_status_ok="$AVATAR_ROOT/FreeBSD/.svn_status_ok"
+		    rm -f "$svn_status_ok"
+		    (
+		     svn status $AVATAR_ROOT/FreeBSD/src
+		     : > "$svn_status_ok"
+		    ) | \
 			awk '$1 == "?" { print $2 }' | \
 			xargs rm -Rf
-		[ -f "${svn_status_ok}" ]
+		    [ -f "$svn_status_ok" ]
+		fi
 
 		for file in $(find ${AVATAR_ROOT}/FreeBSD/ports -name '*.orig' -size 0)
 		do
