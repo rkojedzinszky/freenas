@@ -327,7 +327,7 @@ freebsd_checkout_git()
 	if [ "x${GIT_TAG}" != "x" ] ; then
 		(
 		spl="$-";set -x
-		echo cd src && git checkout "tags/${GIT_TAG}"
+		cd src && git checkout "tags/${GIT_TAG}"
 		echo $spl | grep -q x || set +x
 		)
 	fi
