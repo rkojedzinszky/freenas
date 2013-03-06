@@ -8,6 +8,8 @@ USE_GIT=yes
 export USE_GIT
 #export GIT_BRANCH="freenas-dev-9.1a"
 export GIT_BRANCH="freenas"
+# Set me to the git tag when making a subversion tag.
+#export GIT_TAG=
 
 # do not apply patches for FreeBSD source tree,
 # instead simply use what is in git.

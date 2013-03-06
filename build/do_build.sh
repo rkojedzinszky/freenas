@@ -322,6 +322,10 @@ freebsd_checkout_git()
         : ${GIT_BRANCH=releng/9.1}
         : ${GIT_REPO=/home/william/scm/freeos}
         git clone -b ${GIT_BRANCH} ${GIT_REPO} src
+	if [ "x${GIT_TAG}" != "x" ] ; then
+		cd src
+		git checkout "tags/${GIT_TAG}"
+	fi
      fi
      )
 }
