@@ -374,4 +374,5 @@ device		virtio
 device		virtio_pci
 device		virtio_blk
 device		virtio_balloon
-device		if_vtnet
+device		vtnet
+device		virtio_scsi
