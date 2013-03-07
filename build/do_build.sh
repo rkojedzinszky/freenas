@@ -10,6 +10,9 @@ TOP="$(pwd)"
 . build/functions.sh
 . build/pbi_env
 
+: ${SKIP_SOURCE_PATCHES="yes"}
+: ${USE_GIT="yes"}
+
 # Should we build?
 BUILD=true
 
