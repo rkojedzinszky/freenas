@@ -312,27 +312,27 @@ freebsd_checkout_svn()
 
 freebsd_checkout_git()
 {
-    (
-	 cd "$AVATAR_ROOT/FreeBSD"
-     if [ -d src/.git ] ; then
-        cd src
-        git pull
-        cd ..
-     else
-        : ${GIT_BRANCH=releng/9.1}
-        : ${GIT_REPO=/home/william/scm/freeos}
-        spl="$-";set -x
-        git clone -b ${GIT_BRANCH} ${GIT_REPO} src
-	echo $spl | grep -q x || set +x
-	if [ "x${GIT_TAG}" != "x" ] ; then
-		(
+	(
+	cd "$AVATAR_ROOT/FreeBSD"
+	if [ -d src/.git ] ; then
+		cd src
+		git pull
+		cd ..
+	else
+		: ${GIT_BRANCH=freenas-9-stable}
+		: ${GIT_REPO=https://github.com/trueos/trueos.git}
 		spl="$-";set -x
-		cd src && git checkout "tags/${GIT_TAG}"
+		git clone -b ${GIT_BRANCH} ${GIT_REPO} src
 		echo $spl | grep -q x || set +x
-		)
+		if [ "x${GIT_TAG}" != "x" ] ; then
+			(
+			spl="$-";set -x
+			cd src && git checkout "tags/${GIT_TAG}"
+			echo $spl | grep -q x || set +x
+			)
+		fi
 	fi
-     fi
-     )
+	)
 }
 
 checkout_freebsd_source()
