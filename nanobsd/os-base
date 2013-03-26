@@ -83,6 +83,7 @@ WITHOUT_BIND_LIBS_LWRES=true
 WITHOUT_BIND_NAMED=true
 WITHOUT_BLUETOOTH=true
 WITHOUT_CALENDAR=true
+WITHOUT_CLANG=true
 WITHOUT_CTM=true
 WITHOUT_CVS=true
 WITHOUT_DICT=true
@@ -153,15 +154,15 @@ WITHOUT_SHAREDOCS=true
 # Pull in common definitions.
 . ${NANO_CFG_BASE}/common
 
-add_port emulators/virtio-kmod
 add_port archivers/lzo2
+add_port security/easy-rsa
 add_port security/openvpn
 add_port converters/libiconv
 add_port lang/perl5.14
 add_port converters/iconv
 add_port devel/gettext
-add_port devel/pkg-config
-add_port devel/libpthread-stubs WITHOUT_X11=y
+add_port devel/pkgconf
+add_port devel/libpthread-stubs
 add_port devel/cdialog
 add_port dns/inadyn
 add_port devel/pcre
@@ -178,8 +179,7 @@ add_port databases/db46
 add_port security/cyrus-sasl2
 add_port net/openldap24-sasl-client
 add_port net/nss_ldap
-add_port net/rsync WITHOUT_POPT_PORT=true WITH_SSH=true WITHOUT_ATIMES=true \
-	WITH_ACL=true WITH_ICONV=true WITHOUT_TIMELIMIT=true
+add_port net/rsync OPTIONS_FILE_SET+=ACL OPTIONS_FILE_SET+=ICONV
 add_port lang/python27
 add_port dns/py-dnspython
 add_port devel/talloc MAKE_JOBS_UNSAFE=y MAKE_JOBS_NUMBER=1
@@ -199,7 +199,6 @@ add_port sysutils/fusefs-kmod
 add_port sysutils/fusefs-libs
 add_port devel/libublio
 add_port sysutils/fusefs-ntfs
-add_port sysutils/ntfsprogs
 add_port sysutils/smartmontools
 add_port devel/glib20
 add_port net/libdnet
@@ -207,9 +206,9 @@ add_port emulators/open-vm-tools-nox11 WITHOUT_ICU=y
 add_port databases/sqlite3
 add_port databases/py-sqlite3
 add_port databases/py-bsddb3
-add_port devel/py-setuptools
+add_port devel/py-distribute
 add_port www/py-flup
-add_port www/py-django WITHOUT_MYSQL=y
+add_port www/py-django OPTIONS_FILE_SET+=FASTCGI
 add_port www/py-dojango
 add_port www/dojo
 add_port databases/py-south
@@ -229,6 +228,7 @@ add_port devel/gio-fam-backend
 add_port devel/m4
 add_port devel/bison
 add_port devel/libffi
+add_port misc/gnomehier
 add_port devel/gobject-introspection
 add_port www/py-httplib2
 add_port net/py-oauth2
@@ -239,12 +239,7 @@ if [ "${REPORTING}" = 1 ]; then
 	add_port devel/libstatgrab
 	add_port devel/libltdl
 	add_port print/freetype2
-	add_port x11/kbproto
 	add_port x11/xproto
-	add_port x11/libXdmcp
-	add_port x11/libXau
-	add_port x11/libxcb
-	add_port x11/libX11
 	add_port x11-fonts/fontconfig
 	add_port x11-fonts/libfontenc
 	add_port x11-fonts/mkfontscale
@@ -256,19 +251,15 @@ if [ "${REPORTING}" = 1 ]; then
 	add_port x11-fonts/font-util
 	add_port x11-fonts/encodings
 	add_port x11-fonts/xorg-fonts-truetype
-	add_port x11/xcb-util
-	add_port x11/renderproto
-	add_port x11/libXrender
-	add_port x11/xcb-proto
-	add_port x11/xcb-util-renderutil
 	add_port x11/pixman
-	add_port graphics/cairo WITHOUT_X11=y
-	add_port x11-toolkits/pango WITHOUT_X11=y
-	add_port databases/rrdtool	WITHOUT_X11=y WITHOUT_PERL_MODULE=y \
-					WITH_PYTHON_MODULE=y
+	add_port graphics/cairo OPTIONS_FILE_UNSET+=X11 OPTIONS_FILE_UNSET+=GLIB OPTIONS_FILE_UNSET+=XCB
+	add_port x11-toolkits/pango OPTIONS_FILE_UNSET+=X11
+	add_port databases/rrdtool OPTIONS_FILE_SET+=PERL_MODULE \
+				OPTIONS_FILE_SET+=PYTHON_MODULE \
+				OPTIONS_FILE_SET+=JSON
 	add_port net/liboping
-	add_port net-mgmt/collectd WITHOUT_BIND=y WITHOUT_SNMP=y \
-				   WITHOUT_X11=y WITH_DISK=y WITH_PYTHON=y
+	add_port net-mgmt/collectd5 OPTIONS_FILE_UNSET+=BIND OPTIONS_FILE_UNSET+=SNMP \
+				   OPTIONS_FILE_SET+=DISK OPTIONS_FILE_SET+=PYTHON
 fi
 
 add_port devel/py-ipaddr
@@ -281,21 +272,19 @@ add_port sysutils/areca-cli
 add_port net/py-ldap2 WITH_SASL=y
 add_port sysutils/ataidle
 add_port sysutils/gnome_subr
-add_port devel/dbus WITHOUT_X11=y
-add_port devel/dbus-glib WITHOUT_X11=y
+add_port devel/dbus OPTIONS_FILE_UNSET+=X11
+add_port devel/dbus-glib
 add_port devel/libdaemon
 add_port databases/gdbm
-add_port net/avahi-app WITHOUT_X11=y
-add_port net/avahi-libdns WITHOUT_X11=y
+add_port net/avahi-app
+add_port net/avahi-libdns
 add_port textproc/py-xml
 add_port sysutils/throttle
 add_port sysutils/dmidecode
 add_port sysutils/graid5
 add_port devel/libevent
 add_port sysutils/tmux
-add_port x11/libICE
-add_port x11/libSM
-add_port net/netatalk WITH_PAM=y WITHOUT_APPLETALK=y WITHOUT_X11=y
+add_port net/netatalk WITH_PAM=y WITHOUT_APPLETALK=y
 add_port dns/libidn
 add_port ftp/wget
 add_port benchmarks/iozone
@@ -306,43 +295,31 @@ add_port security/sudo
 add_port sysutils/ipmitool
 add_port www/py-django-json-rpc
 add_port devel/py-mimeparse
+add_port devel/py-six
 add_port devel/py-dateutil
+add_port devel/py-rose
 add_port www/py-django-tastypie
 add_port devel/py-daemon
 add_port devel/py-polib
+add_port devel/py-ujson
 add_port devel/py-simplejson
 add_port sysutils/bsdstats
 add_port www/wgetpaste
 add_port devel/py-greenlet
 add_port net/py-eventlet
 add_port graphics/jpeg
-add_port sysutils/testdisk WITH_NTFS3G=y
+add_port sysutils/testdisk OPTIONS_FILE_SET+=NTFS OPTIONS_FILE_SET+=NTFS3G OPTIONS_FILE_SET+=ICONV
 
-# NOTE: in reality these aren't DEBUG apps, but this ensures that they aren't
-# counted against the release image's size because they aren't used in
-# production yet.
 if [ "${DEBUG}" = 1 ]; then
-	add_port devel/py-zope.interface
-	add_port devel/py-twistedCore
-	add_port devel/py-ujson
-	add_port devel/py-lockfile
-	add_port devel/pyrex
-fi
 
-if [ "${DEBUG}" = 1 ]; then 
-	add_port security/ca_root_nss WITH_ETCSYMLINK=y
+	add_port security/ca_root_nss OPTIONS_FILE_SET+=ETCSYMLINK
 	add_port ftp/curl
 	add_port devel/apr1
-	add_port devel/py-logilab-common
-	add_port devel/py-astng
-	add_port devel/pylint
 	add_port www/neon29
 	add_port devel/subversion
 	add_port editors/vim-lite
 	add_port misc/py-pexpect
-	add_port devel/zmq
-	add_port devel/py-pyzmq
-	add_port devel/ipython WITHOUT_X11=y
+	add_port devel/ipython OPTIONS_FILE_UNSET+=X11 OPTIONS_FILE_UNSET+=ZMQ
 	add_port devel/p5-Term-ReadKey
 	add_port devel/p5-subversion
 	add_port mail/p5-Net-SMTP-SSL
@@ -557,6 +534,20 @@ select_httpd ( )
 	echo 'nginx_enable="YES"' >> ${NANO_WORLDDIR}/etc/rc.conf
 }
 customize_cmd select_httpd
+
+# Ths is required to be added in rescue image as it is no longer
+# in the freebsd patch
+static_dialog()
+{
+	make \
+		-C ${NANO_SRC}/gnu/usr.bin/dialog \
+		BINDIR=/rescue \
+		DESTDIR=${NANO_WORLDDIR} \
+		NO_SHARED= \
+		__MAKE_CONF=${NANO_MAKE_CONF_BUILD} \
+		clean all install
+}
+customize_cmd static_dialog
 
 remove_patch_divots ( )
 {
@@ -775,7 +766,7 @@ last_orders() {
 		# NOTE: keep in synch with create_*_diskimage.
 		mv "$NANO_DISKIMGDIR/_.disk.image" "$firmware_img"
 
-		${XZ_BIN} --keep --verbose -9 < "$firmware_img" > \
+		${NANO_XZ} --keep --verbose -9 < "$firmware_img" > \
 		    "$gui_upgrade_bname.xz"
 
 		tar -cpvf - \
@@ -787,7 +778,7 @@ last_orders() {
 				. \
 			-C "$NANO_DISKIMGDIR" \
 				${firmware_img##*/} \
-		    | ${XZ_BIN} -9 -cz > "$gui_upgrade_bname.txz"
+		    | ${NANO_XZ} -9 -cz > "$gui_upgrade_bname.txz"
 
 		) > "${gui_image_log}" 2>&1
 
@@ -804,7 +795,7 @@ last_orders() {
 	# added because pc-sysinstall doesn't support raw images
 	# (-.-).
 	mv "$NANO_DISKIMGDIR/$NANO_IMGNAME" "$full_image"
-	time ${XZ_BIN} --verbose -9 -f "$full_image"
+	time ${NANO_XZ} --verbose -9 -f "$full_image"
 
 	) > "${full_image_log}" 2>&1
 
