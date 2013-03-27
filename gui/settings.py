@@ -191,6 +191,10 @@ BLACKLIST_NAV = (
 
 FORCE_SCRIPT_NAME = ''
 
+#TODO: Revisit me against cache posion attacks
+#      Maybe offer as an option in the GUI
+ALLOWED_HOSTS = ['*']
+
 FILE_UPLOAD_MAX_MEMORY_SIZE = 33554432
 FILE_UPLOAD_TEMP_DIR = "/var/tmp/firmware/"
 
@@ -208,7 +212,8 @@ LOGGING = {
     'handlers': {
         'mail_admins': {
             'level': 'ERROR',
-            'class': 'django.utils.log.AdminEmailHandler'
+            'class': 'django.utils.log.AdminEmailHandler',
+            'filters': [],
         },
         'syslog': {
             'level': 'DEBUG',
@@ -229,6 +234,9 @@ LOGGING = {
         },
     }
 }
+
+# Django 1.5 requires it prior to run wsgi
+SECRET_KEY = "."
 
 try:
     from local_settings import *
