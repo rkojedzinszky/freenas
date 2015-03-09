@@ -11,15 +11,7 @@
 
 generate_fstab_swap()
 {
-    /usr/local/bin/midclt call notifier.get_allswapdev | \
-    while read devname; do
-    if [ -c "/dev/${devname}" ]; then
-        echo "/dev/${devname}.eli	none			swap		sw		0	0"
-        if [ ! -L /dev/dumpdev ]; then
-            /sbin/dumpon /dev/${devname} && ln -sf /dev/${devname} /dev/dumpdev
-        fi
-    fi
-    done
+	ls -1 /dev/mirror 2>/dev/null | awk '/^swap[0-9]+$/ {print "/dev/mirror/" $1 ".eli", "none", "swap", "sw", 0, 0}'
 }
 
 generate_fstab()
