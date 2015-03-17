@@ -1245,9 +1245,9 @@ class ARCRatioPlugin(RRDBase):
         ratiol2 = os.path.join(self.base_path, "cache_ratio-L2.rrd")
 
         args = [
-            'DEF:arc_hit=%s:value:MAX' % ratioarc,
+            'DEF:arc_hit=%s:value:AVERAGE' % ratioarc,
             'CDEF:arc_p=arc_hit,100,*',
-            'DEF:l2arc_hit=%s:value:MAX' % ratiol2,
+            'DEF:l2arc_hit=%s:value:AVERAGE' % ratiol2,
             'CDEF:l2arc_p=l2arc_hit,100,*',
             'LINE1:arc_p#0000FF:ARC  ',
             'GPRINT:arc_p:MIN:%5.1lf%% Min\g',
