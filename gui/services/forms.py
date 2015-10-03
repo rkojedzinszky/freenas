@@ -1366,8 +1366,6 @@ class iSCSITargetExtentForm(ModelForm):
             used_disks.extend(v.get_disks())
 
         _notifier = notifier()
-        zsnapshots = _notifier.zfs_snapshot_list(sort='name')
-        snaps = []
         for volume in Volume.objects.filter(vol_fstype__exact='ZFS'):
             zvols = _notifier.list_zfs_vols(volume.vol_name, sort='name')
             for zvol, attrs in list(zvols.items()):
@@ -1375,13 +1373,6 @@ class iSCSITargetExtentForm(ModelForm):
                     diskchoices["zvol/" + zvol] = "%s (%s)" % (
                         zvol,
                         humanize_size(attrs['volsize']))
-                if zvol not in zsnapshots:
-                    continue
-                snaps.extend(zsnapshots.get(zvol))
-        for snap in snaps:
-            diskchoices["zvol/" + snap.fullname] = "%s (%s) [ro]" % (
-                snap.fullname,
-                humanize_size(attrs['volsize']))
 
         # Grab partition list
         # NOTE: This approach may fail if device nodes are not accessible.
