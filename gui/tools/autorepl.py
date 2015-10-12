@@ -422,6 +422,7 @@ Hello,
             continue
 
     # Grab map from remote system
+    map_target = {}
     if recursive:
         rzfscmd = '"zfs list -H -t snapshot -p -o name,creation -r \'%s\'"' % (remotefs_final)
     else:
@@ -437,10 +438,12 @@ Hello,
         snaplist = [localfs + x[l:] for x in snaplist]
         map_target = mapfromdata(snaplist)
     elif error != '':
-        results[replication.id] = 'Failed: %s' % (error)
-        continue
-    else:
-        map_target = {}
+        rzfscmd = '"zfs list -H -o name \'%s\'"' % (remotefs_final)
+        sshproc = pipeopen('%s %s' % (sshcmd, rzfscmd))
+        output = sshproc.communicate()[0]
+        if output != '': # means target dataset exists, previously an unexpected error has occured
+            results[replication.id] = 'Failed: %s' % (error)
+            continue
 
     tasks = {}
     delete_tasks = {}
