@@ -1,0 +1,59 @@
+commit ace04134f006ca9e50f09bd1ce5ea1ab07aab6e6
+Author: Richard Kojedzinszky <krichy@nmdps.net>
+Date:   Sat Jan 14 10:03:34 2017 +0100
+
+    zfs_arc: derive hit/miss stats for ratio calculations
+
+diff --git a/src/zfs_arc.c b/src/zfs_arc.c
+index 8feb31d..8ac07d8 100644
+--- src/zfs_arc.c
++++ src/zfs_arc.c
+@@ -166,9 +166,11 @@ static void za_submit_ratio (const char* type_instance, gauge_t hits, gauge_t mi
+ 	za_submit_gauge ("cache_ratio", type_instance, ratio);
+ }
+ 
++static value_to_rate_state_t arc_hits_state, arc_misses_state, l2_hits_state, l2_misses_state;
++
+ static int za_read (void)
+ {
+-	gauge_t  arc_hits, arc_misses, l2_hits, l2_misses;
++	value_t  arc_hits, arc_misses, l2_hits, l2_misses;
+ 	value_t  l2_io[2];
+ 	kstat_t	 *ksp	= NULL;
+ 
+@@ -296,13 +298,17 @@ static int za_read (void)
+ 	za_read_derive (ksp, "prefetch_metadata_misses", "cache_result", "prefetch_metadata-miss");
+ 
+ 	/* Ratios */
+-	arc_hits   = (gauge_t) get_zfs_value(ksp, "hits");
+-	arc_misses = (gauge_t) get_zfs_value(ksp, "misses");
+-	l2_hits    = (gauge_t) get_zfs_value(ksp, "l2_hits");
+-	l2_misses  = (gauge_t) get_zfs_value(ksp, "l2_misses");
++	cdtime_t now = cdtime();
+ 
+-	za_submit_ratio ("arc", arc_hits, arc_misses);
+-	za_submit_ratio ("L2", l2_hits, l2_misses);
++	if ((value_to_rate(&arc_hits, (derive_t)get_zfs_value(ksp, "hits"), &arc_hits_state, DS_TYPE_DERIVE, now) == 0) &&
++	    (value_to_rate(&arc_misses, (derive_t)get_zfs_value(ksp, "misses"), &arc_misses_state, DS_TYPE_DERIVE, now) == 0)) {
++		za_submit_ratio ("arc", arc_hits.gauge, arc_misses.gauge);
++	}
++
++	if ((value_to_rate(&l2_hits, (derive_t)get_zfs_value(ksp, "l2_hits"), &l2_hits_state, DS_TYPE_DERIVE, now) == 0) &&
++	    (value_to_rate(&l2_misses, (derive_t)get_zfs_value(ksp, "l2_misses"), &l2_misses_state, DS_TYPE_DERIVE, now) == 0)) {
++		za_submit_ratio ("L2", l2_hits.gauge, l2_misses.gauge);
++	}
+ 
+ 	/* I/O */
+ 	l2_io[0].derive = get_zfs_value(ksp, "l2_read_bytes");
+@@ -335,6 +341,11 @@ static int za_init (void) /* {{{ */
+ 	}
+ #endif
+ 
++	memset(&arc_hits_state, 0, sizeof(arc_hits_state));
++	memset(&arc_misses_state, 0, sizeof(arc_misses_state));
++	memset(&l2_hits_state, 0, sizeof(l2_hits_state));
++	memset(&l2_misses_state, 0, sizeof(l2_misses_state));
++
+ 	return (0);
+ } /* }}} int za_init */
+ 
