@@ -28,6 +28,7 @@ from freenasUI.services.utils import SmartAlert
 
 DISK_EXPIRECACHE_DAYS = 7
 MIRROR_MAX = 5
+MIRROR_DEVS = 3
 RE_CAMCONTROL_DRIVE_LOCKED = re.compile(r'^drive locked\s+yes$', re.M)
 RE_DA = re.compile('^da[0-9]+$')
 RE_DD = re.compile(r'^(\d+) bytes transferred .*\((\d+) bytes')
@@ -858,9 +859,8 @@ class DiskService(CRUDService):
                     continue
                 consumers = list(g.consumers)
                 # If the mirror is degraded lets remove it and make a new pair
-                if len(consumers) == 1:
-                    c = consumers[0]
-                    await self.swaps_remove_disks([c.provider.geom.name])
+                if len(consumers) != MIRROR_DEVS:
+                    await self.swaps_remove_disks([c.provider.geom.name for c in consumers])
                 else:
                     swap_devices.append(f'mirror/{g.name}')
                     for c in consumers:
@@ -892,19 +892,19 @@ class DiskService(CRUDService):
                 unused_partitions += partitions
                 continue
 
-            for i in range(int(len(partitions) / 2)):
+            for i in range(int(len(partitions) / MIRROR_DEVS)):
                 if len(swap_devices) > MIRROR_MAX:
                     break
-                part_a, part_b = partitions[0:2]
-                partitions = partitions[2:]
+                swap_parts = partitions[0:MIRROR_DEVS]
+                partitions = partitions[MIRROR_DEVS:]
                 if not dumpdev:
-                    dumpdev = await dempdev_configure(part_a)
+                    dumpdev = await dempdev_configure(swap_parts[0])
                 try:
                     name = new_swap_name()
                     if name is None:
                         # Which means maximum has been reached and we can stop
                         break
-                    await run('gmirror', 'create', '-b', 'prefer', name, part_a, part_b)
+                    await run('gmirror', 'create', '-b', 'prefer', name, *swap_parts)
                 except Exception:
                     self.logger.warn(f'Failed to create gmirror {name}', exc_info=True)
                     continue
