@@ -162,6 +162,8 @@ EOF
 					if ! /usr/local/sbin/smartctl -i ${prop_dev} | egrep -i "^.*SMART.*Enabled" > /dev/null 2>&1; then
 						eval "/usr/local/sbin/smartctl -s on ${prop_dev} > /dev/null 2>&1" || continue
 					fi
+				else
+					continue
 				fi
 				echo -n "${prop_dev} -a"
 				echo -n " -n ${smart_powermode}"
